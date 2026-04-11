@@ -148,7 +148,7 @@ export default function Home() {
       {/* HOW IT WORKS */}
       <section className="section" id="how-it-works">
         <p className="section-label">// How it works</p>
-        <h2>Three steps.<br />Zero effort.</h2>
+        <h2>Three steps. Zero effort.</h2>
         <div className="steps">
           <div className="step">
             <div className="step-num">01</div>
@@ -172,7 +172,7 @@ export default function Home() {
       <section className="outputs" id="what-you-get">
         <div className="outputs-inner">
           <p className="section-label">// What you get</p>
-          <h2>Everything you need.<br />Nothing you don&apos;t.</h2>
+          <h2>Everything you need. Nothing you don&apos;t.</h2>
           <div className="output-grid">
             <div className="output-item">
               <div className="output-icon">📄</div>
@@ -217,7 +217,7 @@ export default function Home() {
       {/* TESTIMONIALS */}
       <section className="testimonials">
         <p className="section-label">// What creators say</p>
-        <h2>Built for people<br />who make things.</h2>
+        <h2>Built for people who make things.</h2>
         <div className="testi-grid">
           <div className="testi-card">
             <p className="testi-text">
