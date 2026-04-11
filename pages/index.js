@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Clipr — One recording. A week of content.</title>
+        <title>Droptly — One recording. A week of content.</title>
         <meta name="description" content="Turn any video or audio recording into a full week of content. Transcripts, carousels, tweet threads, blog outlines, and more — in under 60 seconds." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -42,7 +42,7 @@ export default function Home() {
 
       {/* NAV */}
       <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
-        <a href="#" className="logo">clip<span>r</span></a>
+        <a href="#" className="logo">drop<span>tly</span></a>
         <ul className="nav-links">
           <li><a href="#how-it-works">How it works</a></li>
           <li><a href="#what-you-get">What you get</a></li>
@@ -57,7 +57,7 @@ export default function Home() {
         <p className="hero-tag">// AI content repurposing</p>
         <h1>One recording.<br /><em>A week</em> of content.</h1>
         <p className="hero-sub">
-          Paste a YouTube link, podcast URL, or upload a file. Clipr extracts your
+          Paste a YouTube link, podcast URL, or upload a file. Droptly extracts your
           best ideas and generates a full content kit — ready to publish.
         </p>
         <div className="hero-actions">
@@ -157,7 +157,7 @@ export default function Home() {
           </div>
           <div className="step">
             <div className="step-num">02</div>
-            <h3>Clipr processes it</h3>
+            <h3>Droptly processes it</h3>
             <p>Our AI transcribes, analyzes, and extracts the key insights, quotes, and takeaways from your content.</p>
           </div>
           <div className="step">
@@ -221,7 +221,7 @@ export default function Home() {
         <div className="testi-grid">
           <div className="testi-card">
             <p className="testi-text">
-              &ldquo;I record one long podcast per week and used to spend Sunday afternoon manually clipping content. Clipr cut that to about 10 minutes. It&apos;s genuinely changed my workflow.&rdquo;
+              &ldquo;I record one long podcast per week and used to spend Sunday afternoon manually clipping content. Droptly cut that to about 10 minutes. It&apos;s genuinely changed my workflow.&rdquo;
             </p>
             <div className="testi-author">
               <div className="testi-avatar" style={{ background: '#2a2a20', color: 'var(--accent)' }}>MR</div>
@@ -245,7 +245,7 @@ export default function Home() {
           </div>
           <div className="testi-card">
             <p className="testi-text">
-              &ldquo;As a solo founder, I wear too many hats. Clipr is like having a content team for $19 a month. I feed it my webinar recordings and it handles the rest.&rdquo;
+              &ldquo;As a solo founder, I wear too many hats. Droptly is like having a content team for $19 a month. I feed it my webinar recordings and it handles the rest.&rdquo;
             </p>
             <div className="testi-author">
               <div className="testi-avatar" style={{ background: '#1a201a', color: 'var(--accent)' }}>TN</div>
@@ -319,7 +319,7 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer>
-        <p>© 2026 Clipr. All rights reserved.</p>
+        <p>© 2026 Droptly. All rights reserved.</p>
         <ul className="nav-links">
           <li><a href="#">Privacy</a></li>
           <li><a href="#">Terms</a></li>
