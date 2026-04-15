@@ -1,11 +1,42 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [url, setUrl] = useState('');
-  const [demoStatus, setDemoStatus] = useState(null); // null | 'error' | 'loading' | 'done'
+  const [demoStatus, setDemoStatus] = useState(null);
+  const [demoError, setDemoError] = useState(null);
+  const [kit, setKit] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [waitlistStatus, setWaitlistStatus] = useState(null); // null | 'loading' | 'done' | 'error'
+
+  function openModal(e) {
+    e.preventDefault();
+    setModalOpen(true);
+    setWaitlistStatus(null);
+    setEmail('');
+  }
+
+  async function submitWaitlist(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setWaitlistStatus('loading');
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setWaitlistStatus('done');
+      } else {
+        setWaitlistStatus('error');
+      }
+    } catch {
+      setWaitlistStatus('error');
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -13,14 +44,41 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  function fakeGenerate() {
+  async function generate() {
     if (!url.trim()) {
       setDemoStatus('error');
-      setTimeout(() => setDemoStatus(null), 1200);
+      setDemoError('Drop a URL first');
+      setTimeout(() => { setDemoStatus(null); setDemoError(null); }, 1500);
       return;
     }
     setDemoStatus('loading');
-    setTimeout(() => setDemoStatus('done'), 1800);
+    setDemoError(null);
+    setKit(null);
+    try {
+      const res = await fetch('/api/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        setDemoStatus('error');
+        setDemoError('Server error. Try a different YouTube video.');
+        return;
+      }
+      if (!res.ok) {
+        setDemoStatus('error');
+        setDemoError(data.error || 'Something went wrong');
+        return;
+      }
+      setKit(data.kit);
+      setDemoStatus('done');
+    } catch {
+      setDemoStatus('error');
+      setDemoError('Connection error. Try again.');
+    }
   }
 
   const tickerItems = [
@@ -47,7 +105,7 @@ export default function Home() {
           <li><a href="#how-it-works">How it works</a></li>
           <li><a href="#what-you-get">What you get</a></li>
           <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#" className="nav-cta">Try free →</a></li>
+          <li><a href="#" className="nav-cta" onClick={openModal}>Try free →</a></li>
         </ul>
       </nav>
 
@@ -61,7 +119,7 @@ export default function Home() {
           best ideas and generates a full content kit — ready to publish.
         </p>
         <div className="hero-actions">
-          <a href="#" className="btn-primary">Start for free →</a>
+          <a href="#" className="btn-primary" onClick={openModal}>Start for free →</a>
           <a href="#how-it-works" className="btn-ghost">See how it works</a>
         </div>
 
@@ -82,36 +140,79 @@ export default function Home() {
               placeholder="https://youtube.com/watch?v=..."
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && fakeGenerate()}
+              onKeyDown={(e) => e.key === 'Enter' && generate()}
             />
 
             {demoStatus === 'loading' && (
               <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.8rem', color: 'var(--accent)' }}>
-                ⚡ Generating your kit...
+                ⚡ Fetching transcript &amp; generating your kit...
               </p>
             )}
             {demoStatus === 'done' && (
-              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.8rem', color: 'var(--accent2)' }}>
-                ✓ Kit ready — sign up to view
+              <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.8rem', color: 'var(--accent)' }}>
+                ✓ Kit ready
               </p>
             )}
             {demoStatus === 'error' && (
               <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.8rem', color: 'var(--accent2)' }}>
-                ↑ Drop a URL first
+                ↑ {demoError || 'Drop a URL first'}
               </p>
             )}
 
-            <button className="drop-btn" onClick={fakeGenerate}>
-              Generate my content kit
+            <button className="drop-btn" onClick={generate} disabled={demoStatus === 'loading'}>
+              {demoStatus === 'loading' ? 'Processing...' : 'Generate my content kit'}
             </button>
 
             <div className="output-cards">
-              {['transcript', 'carousel', 'tweet thread', 'hook', 'blog outline', 'hashtags'].map((item) => (
+              {['transcript', 'carousel', 'tweet thread', 'hook', 'shorts scripts', 'blog outline', 'hashtags'].map((item) => (
                 <span key={item} className="output-pill">{item}</span>
               ))}
             </div>
           </div>
         </div>
+      {/* KIT PREVIEW */}
+      {kit && (
+        <div className="kit-preview">
+          <p className="section-label" style={{ textAlign: 'center', marginBottom: '0.5rem' }}>// your content kit</p>
+          <p className="kit-summary">{kit.summary}</p>
+          <div className="kit-grid">
+            {kit.carousel && kit.carousel[0] && (
+              <div className="kit-card">
+                <div className="kit-card-label">Carousel — Slide 1</div>
+                <div className="kit-card-headline">{kit.carousel[0].headline}</div>
+                <p className="kit-card-body">{kit.carousel[0].body}</p>
+                <div className="kit-card-more">+ {(kit.carousel.length - 1)} more slides</div>
+              </div>
+            )}
+            {kit.tweets && kit.tweets[0] && (
+              <div className="kit-card">
+                <div className="kit-card-label">Tweet Thread — Tweet 1</div>
+                <p className="kit-card-body">{kit.tweets[0]}</p>
+                <div className="kit-card-more">+ {(kit.tweets.length - 1)} more tweets</div>
+              </div>
+            )}
+            {kit.hooks && kit.hooks[0] && (
+              <div className="kit-card">
+                <div className="kit-card-label">Short-Form Hook</div>
+                <p className="kit-card-body">{kit.hooks[0]}</p>
+                <div className="kit-card-more">+ 2 more variants</div>
+              </div>
+            )}
+            {kit.shorts && kit.shorts[0] && (
+              <div className="kit-card">
+                <div className="kit-card-label">YouTube Short — Script 1</div>
+                <div className="kit-card-headline">{kit.shorts[0].title}</div>
+                <p className="kit-card-body" style={{ fontStyle: 'italic', opacity: 0.8 }}>&ldquo;{kit.shorts[0].hook}&rdquo;</p>
+                <div className="kit-card-more">+ {(kit.shorts.length - 1)} more Short scripts</div>
+              </div>
+            )}
+          </div>
+          <div className="kit-gate">
+            <p>Full Shorts scripts, blog outline, full transcript, hashtag sets, and all slides are in the full kit.</p>
+            <a href="#" className="btn-primary" onClick={openModal}>Get your full kit →</a>
+          </div>
+        </div>
+      )}
       </section>
 
       {/* TICKER */}
@@ -128,7 +229,7 @@ export default function Home() {
       {/* STAT BAR */}
       <div className="stat-bar">
         <div className="stat">
-          <div className="stat-num">6</div>
+          <div className="stat-num">7</div>
           <div className="stat-label">Content pieces</div>
         </div>
         <div className="stat">
@@ -205,6 +306,12 @@ export default function Home() {
               <span className="output-badge">Ready to write</span>
             </div>
             <div className="output-item">
+              <div className="output-icon">🎬</div>
+              <h4>Shorts Scripts</h4>
+              <p>5 ready-to-record YouTube Shorts scripts pulled from the strongest moments of your video. Hook, script, CTA — done.</p>
+              <span className="output-badge">5 scripts</span>
+            </div>
+            <div className="output-item">
               <div className="output-icon">#</div>
               <h4>Hashtag Sets</h4>
               <p>Platform-specific hashtag sets for LinkedIn, Instagram, and TikTok to maximize organic reach.</p>
@@ -274,7 +381,7 @@ export default function Home() {
                 <li>YouTube &amp; podcast URLs</li>
                 <li>Export as plain text</li>
               </ul>
-              <button className="price-btn">Get started free</button>
+              <button className="price-btn" onClick={openModal}>Get started free</button>
             </div>
             <div className="price-card featured">
               <p className="price-tier">Pro</p>
@@ -287,7 +394,7 @@ export default function Home() {
                 <li>Export as Markdown &amp; Notion</li>
                 <li>Priority processing</li>
               </ul>
-              <button className="price-btn">Start Pro free for 7 days</button>
+              <button className="price-btn" onClick={openModal}>Start Pro free for 7 days</button>
             </div>
             <div className="price-card">
               <p className="price-tier">Teams</p>
@@ -300,7 +407,7 @@ export default function Home() {
                 <li>Custom brand voice</li>
                 <li>Slack integration</li>
               </ul>
-              <button className="price-btn">Try Teams free</button>
+              <button className="price-btn" onClick={openModal}>Try Teams free</button>
             </div>
           </div>
         </div>
@@ -312,7 +419,7 @@ export default function Home() {
         <h2>Stop leaving content on the table.</h2>
         <p>Every recording you post without repurposing is reach you&apos;ll never get back.</p>
         <div className="hero-actions" style={{ justifyContent: 'center' }}>
-          <a href="#" className="btn-primary">Create free account →</a>
+          <a href="#" className="btn-primary" onClick={openModal}>Join the waitlist →</a>
           <a href="#how-it-works" className="btn-ghost">Watch a demo</a>
         </div>
       </section>
@@ -327,6 +434,47 @@ export default function Home() {
           <li><a href="#">Contact</a></li>
         </ul>
       </footer>
+
+      {/* WAITLIST MODAL */}
+      {modalOpen && (
+        <div className="modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setModalOpen(false)}>×</button>
+            {waitlistStatus === 'done' ? (
+              <div className="modal-success">
+                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>✓</div>
+                <h3>You&apos;re on the list.</h3>
+                <p>We&apos;ll email you when Droptly is ready. Appreciate you.</p>
+              </div>
+            ) : (
+              <>
+                <p className="hero-tag" style={{ marginBottom: '1rem' }}>// early access</p>
+                <h3 className="modal-title">Join the waitlist</h3>
+                <p className="modal-sub">Be first to know when Droptly launches. No spam — one email when we&apos;re live.</p>
+                <form className="modal-form" onSubmit={submitWaitlist}>
+                  <input
+                    className="drop-input"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                  <button className="drop-btn" type="submit" disabled={waitlistStatus === 'loading'}>
+                    {waitlistStatus === 'loading' ? 'Submitting...' : 'Notify me →'}
+                  </button>
+                  {waitlistStatus === 'error' && (
+                    <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.75rem', color: 'var(--accent2)', textAlign: 'center' }}>
+                      Something went wrong. Try again.
+                    </p>
+                  )}
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
