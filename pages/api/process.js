@@ -18,6 +18,15 @@ function extractVideoId(url) {
 }
 
 export default async function handler(req, res) {
+  try {
+    return await processRequest(req, res);
+  } catch (err) {
+    console.error('Unhandled error in /api/process:', err);
+    return res.status(500).json({ error: 'Server error. Try a different YouTube video.' });
+  }
+}
+
+async function processRequest(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { url } = req.body;
