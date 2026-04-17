@@ -257,6 +257,35 @@ footer .nav-links { gap: 2rem; }
 
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
+/* ── Kit Preview ── */
+.kit-preview { width: 100%; max-width: 560px; margin-top: 2.5rem; }
+.kit-summary { color: var(--muted); font-size: 0.875rem; line-height: 1.7; margin-bottom: 1.5rem; font-style: italic; }
+.kit-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 1rem; }
+.kit-tab { flex: 1; background: var(--surface); color: var(--muted); border: none; border-right: 1px solid var(--border); padding: 0.6rem 0.5rem; font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.05em; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.kit-tab:last-child { border-right: none; }
+.kit-tab:hover { color: var(--text); }
+.kit-tab.active { background: var(--accent); color: var(--bg); font-weight: 700; }
+.kit-tab-content { min-height: 120px; }
+.kit-tab-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+.kit-card { background: var(--card); border: 1px solid var(--border); border-radius: 2px; padding: 1.25rem 1.5rem; text-align: left; }
+.kit-card-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent2); margin-bottom: 0.5rem; }
+.kit-card-headline { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+.kit-card-body { color: var(--muted); font-size: 0.85rem; line-height: 1.65; }
+.kit-card-more { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--accent); margin-top: 0.75rem; }
+.kit-gate-inline { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); text-align: center; padding: 0.75rem; border: 1px dashed var(--border); border-radius: 2px; }
+.kit-gate { text-align: center; margin-top: 1.5rem; padding: 1.5rem; border: 1px dashed var(--border); border-radius: 2px; }
+.kit-gate p { color: var(--muted); font-size: 0.8rem; margin-bottom: 1rem; }
+.kit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+
+/* ── Modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2.5rem; max-width: 400px; width: 100%; }
+.modal h3 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+.modal p { color: var(--muted); font-size: 0.875rem; margin-bottom: 1.5rem; }
+.modal-input { background: var(--bg); border: 1px solid var(--border); width: 100%; color: var(--text); border-radius: 2px; outline: none; padding: 0.75rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.85rem; transition: border-color 0.2s; margin-bottom: 0.75rem; box-sizing: border-box; }
+.modal-input:focus { border-color: var(--accent); }
+.modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.25rem; cursor: pointer; }
+
 @media (max-width: 768px) {
   .nav { padding: 1.25rem 1.5rem; }
   .nav-links { display: none; }

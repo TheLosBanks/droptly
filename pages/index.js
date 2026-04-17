@@ -10,6 +10,7 @@ export default function Home() {
   const [modalOpen, setModalOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [waitlistStatus, setWaitlistStatus] = useState(null); // null | 'loading' | 'done' | 'error'
+  const [activeTab, setActiveTab] = useState('carousel');
 
   function openModal(e) {
     e.preventDefault();
@@ -175,40 +176,86 @@ export default function Home() {
         <div className="kit-preview">
           <p className="section-label" style={{ textAlign: 'center', marginBottom: '0.5rem' }}>// your content kit</p>
           <p className="kit-summary">{kit.summary}</p>
-          <div className="kit-grid">
-            {kit.carousel && kit.carousel[0] && (
-              <div className="kit-card">
-                <div className="kit-card-label">Carousel — Slide 1</div>
-                <div className="kit-card-headline">{kit.carousel[0].headline}</div>
-                <p className="kit-card-body">{kit.carousel[0].body}</p>
-                <div className="kit-card-more">+ {(kit.carousel.length - 1)} more slides</div>
+
+          {/* TABS */}
+          <div className="kit-tabs">
+            {[
+              { id: 'carousel', label: 'Carousel' },
+              { id: 'tweets', label: 'Tweets' },
+              { id: 'hooks', label: 'Hooks' },
+              { id: 'shorts', label: 'Shorts Scripts' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                className={`kit-tab${activeTab === tab.id ? ' active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* TAB CONTENT */}
+          <div className="kit-tab-content">
+            {activeTab === 'carousel' && kit.carousel && (
+              <div className="kit-tab-panel">
+                {kit.carousel.slice(0, 2).map((slide, i) => (
+                  <div key={i} className="kit-card">
+                    <div className="kit-card-label">Slide {slide.slide || i + 1}</div>
+                    <div className="kit-card-headline">{slide.headline}</div>
+                    <p className="kit-card-body">{slide.body}</p>
+                  </div>
+                ))}
+                {kit.carousel.length > 2 && (
+                  <div className="kit-gate-inline">+ {kit.carousel.length - 2} more slides in full kit</div>
+                )}
               </div>
             )}
-            {kit.tweets && kit.tweets[0] && (
-              <div className="kit-card">
-                <div className="kit-card-label">Tweet Thread — Tweet 1</div>
-                <p className="kit-card-body">{kit.tweets[0]}</p>
-                <div className="kit-card-more">+ {(kit.tweets.length - 1)} more tweets</div>
+
+            {activeTab === 'tweets' && kit.tweets && (
+              <div className="kit-tab-panel">
+                {kit.tweets.slice(0, 3).map((tweet, i) => (
+                  <div key={i} className="kit-card">
+                    <div className="kit-card-label">Tweet {i + 1}</div>
+                    <p className="kit-card-body">{tweet}</p>
+                  </div>
+                ))}
+                {kit.tweets.length > 3 && (
+                  <div className="kit-gate-inline">+ {kit.tweets.length - 3} more tweets in full kit</div>
+                )}
               </div>
             )}
-            {kit.hooks && kit.hooks[0] && (
-              <div className="kit-card">
-                <div className="kit-card-label">Short-Form Hook</div>
-                <p className="kit-card-body">{kit.hooks[0]}</p>
-                <div className="kit-card-more">+ 2 more variants</div>
+
+            {activeTab === 'hooks' && kit.hooks && (
+              <div className="kit-tab-panel">
+                {kit.hooks.map((hook, i) => (
+                  <div key={i} className="kit-card">
+                    <div className="kit-card-label">Hook Variant {i + 1}</div>
+                    <p className="kit-card-body">{hook}</p>
+                  </div>
+                ))}
               </div>
             )}
-            {kit.shorts && kit.shorts[0] && (
-              <div className="kit-card">
-                <div className="kit-card-label">YouTube Short — Script 1</div>
-                <div className="kit-card-headline">{kit.shorts[0].title}</div>
-                <p className="kit-card-body" style={{ fontStyle: 'italic', opacity: 0.8 }}>&ldquo;{kit.shorts[0].hook}&rdquo;</p>
-                <div className="kit-card-more">+ {(kit.shorts.length - 1)} more Short scripts</div>
+
+            {activeTab === 'shorts' && kit.shorts && (
+              <div className="kit-tab-panel">
+                {kit.shorts.slice(0, 2).map((short, i) => (
+                  <div key={i} className="kit-card">
+                    <div className="kit-card-label">Short Script {i + 1}</div>
+                    <div className="kit-card-headline">{short.title}</div>
+                    <p className="kit-card-body" style={{ fontStyle: 'italic', opacity: 0.85 }}>&ldquo;{short.hook}&rdquo;</p>
+                    <p className="kit-card-body" style={{ fontSize: '0.8rem', opacity: 0.6 }}>🎵 {short.audio_style}</p>
+                  </div>
+                ))}
+                {kit.shorts.length > 2 && (
+                  <div className="kit-gate-inline">+ {kit.shorts.length - 2} more Short scripts in full kit</div>
+                )}
               </div>
             )}
           </div>
+
           <div className="kit-gate">
-            <p>Full Shorts scripts, blog outline, full transcript, hashtag sets, and all slides are in the full kit.</p>
+            <p>Full scripts, blog outline, transcript, hashtag sets, and all slides unlocked in full kit.</p>
             <a href="#" className="btn-primary" onClick={openModal}>Get your full kit →</a>
           </div>
         </div>
