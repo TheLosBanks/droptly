@@ -40,7 +40,8 @@ async function processRequest(req, res) {
   let transcriptItems;
   try {
     transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
-  } catch {
+  } catch (e1) {
+    console.log('Transcript en-only failed for', videoId, e1?.message, '— retrying without lang');
     // Retry without language constraint (some videos only have auto-captions)
     try {
       transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
