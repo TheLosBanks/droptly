@@ -18,13 +18,22 @@ function extractVideoId(url) {
 }
 
 export default async function handler(req, res) {
+  try {
+    return await processRequest(req, res);
+  } catch (err) {
+    console.error('Unhandled error in /api/process:', err);
+    return res.status(500).json({ error: 'Server error. Try a different YouTube video.' });
+  }
+}
+
+async function processRequest(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { url, transcript: preExtractedTranscript } = req.body;
 
   let transcript;
 
-  // Accept pre-extracted transcript (e.g. from file upload)
+  // Accept pre-extracted transcript (e.g. from file upload flow)
   if (preExtractedTranscript && typeof preExtractedTranscript === 'string' && preExtractedTranscript.trim().length > 0) {
     transcript = preExtractedTranscript.slice(0, 12000);
   } else {
@@ -38,7 +47,8 @@ export default async function handler(req, res) {
     let transcriptItems;
     try {
       transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
-    } catch {
+    } catch (e1) {
+      console.log('Transcript en-only failed for', videoId, e1?.message, '— retrying without lang');
       // Retry without language constraint (some videos only have auto-captions)
       try {
         transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);

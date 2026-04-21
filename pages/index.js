@@ -112,7 +112,7 @@ export default function Home() {
   // Waitlist modal
   const [modalOpen, setModalOpen] = useState(false);
   const [email, setEmail] = useState('');
-  const [waitlistStatus, setWaitlistStatus] = useState(null);
+  const [waitlistStatus, setWaitlistStatus] = useState(null); // null | 'loading' | 'done' | 'error'
 
   // Waitlist counter
   const [waitlistCount, setWaitlistCount] = useState(47);
