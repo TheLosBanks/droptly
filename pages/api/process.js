@@ -20,34 +20,42 @@ function extractVideoId(url) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ error: 'URL required' });
+  const { url, transcript: preExtractedTranscript } = req.body;
 
-  const videoId = extractVideoId(url);
-  if (!videoId) {
-    return res.status(400).json({ error: 'Invalid YouTube URL. Paste a youtube.com or youtu.be link.' });
-  }
+  let transcript;
 
-  let transcriptItems;
-  try {
-    transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
-  } catch {
-    // Retry without language constraint (some videos only have auto-captions)
-    try {
-      transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-    } catch (err) {
-      console.error('Transcript fetch failed for', videoId, err?.message);
-      return res.status(422).json({ error: 'No captions found for this video. Try a regular YouTube video (not Shorts) that has auto-captions enabled.' });
+  // Accept pre-extracted transcript (e.g. from file upload)
+  if (preExtractedTranscript && typeof preExtractedTranscript === 'string' && preExtractedTranscript.trim().length > 0) {
+    transcript = preExtractedTranscript.slice(0, 12000);
+  } else {
+    if (!url) return res.status(400).json({ error: 'URL or transcript required' });
+
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      return res.status(400).json({ error: 'Invalid YouTube URL. Paste a youtube.com or youtu.be link.' });
     }
-  }
 
-  if (!transcriptItems || transcriptItems.length === 0) {
-    return res.status(422).json({ error: 'Transcript was empty. Try a different video.' });
-  }
+    let transcriptItems;
+    try {
+      transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'en' });
+    } catch {
+      // Retry without language constraint (some videos only have auto-captions)
+      try {
+        transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+      } catch (err) {
+        console.error('Transcript fetch failed for', videoId, err?.message);
+        return res.status(422).json({ error: 'No captions found for this video. Try a regular YouTube video (not Shorts) that has auto-captions enabled.' });
+      }
+    }
 
-  const rawTranscript = transcriptItems.map((t) => t.text).join(' ');
-  // Truncate to ~12k chars to keep Claude costs low (~$0.02-0.05 per call)
-  const transcript = rawTranscript.slice(0, 12000);
+    if (!transcriptItems || transcriptItems.length === 0) {
+      return res.status(422).json({ error: 'Transcript was empty. Try a different video.' });
+    }
+
+    const rawTranscript = transcriptItems.map((t) => t.text).join(' ');
+    // Truncate to ~12k chars to keep Claude costs low (~$0.02-0.05 per call)
+    transcript = rawTranscript.slice(0, 12000);
+  }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
