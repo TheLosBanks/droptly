@@ -44,17 +44,18 @@ async function processRequest(req, res) {
       return res.status(400).json({ error: 'Invalid YouTube URL. Paste a youtube.com or youtu.be link.' });
     }
 
-    const isShorts = url.includes('/shorts/');
+    // Shorts don't support transcript fetching — return early with clear instructions
+    if (url.includes('/shorts/')) {
+      return res.status(422).json({
+        error: 'YouTube Shorts don\'t support captions via the API. On YouTube, tap ⋮ → Share → Copy link to get a regular watch URL, then paste that here instead.',
+      });
+    }
+
     let transcriptItems;
     try {
       transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
     } catch (err) {
       console.error('Transcript fetch failed for', videoId, err?.message);
-      if (isShorts) {
-        return res.status(422).json({
-          error: 'YouTube Shorts captions are often unavailable. Open the Short on YouTube, tap ⋮ → Share → Copy link — it gives you a regular watch URL that works here.',
-        });
-      }
       return res.status(422).json({ error: 'No captions found for this video. Make sure auto-captions are enabled, or upload an audio file instead.' });
     }
 
