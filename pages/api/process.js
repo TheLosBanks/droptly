@@ -1,6 +1,4 @@
 import Anthropic from '@anthropic-ai/sdk';
-import ytModule from 'youtube-transcript';
-const YoutubeTranscript = ytModule.YoutubeTranscript ?? ytModule.default?.YoutubeTranscript ?? ytModule;
 
 export const config = { maxDuration: 60 };
 
@@ -45,26 +43,62 @@ async function processRequest(req, res) {
       return res.status(400).json({ error: 'Invalid YouTube URL. Paste a youtube.com or youtu.be link.' });
     }
 
-    // Shorts don't support transcript fetching — return early with clear instructions
+    // Shorts don't support transcript fetching
     if (url.includes('/shorts/')) {
       return res.status(422).json({
-        error: 'YouTube Shorts don\'t support captions via the API. On YouTube, tap ⋮ → Share → Copy link to get a regular watch URL, then paste that here instead.',
+        error: "YouTube Shorts don't support captions via the API. On YouTube, tap ⋮ → Share → Copy link to get a regular watch URL, then paste that here instead.",
       });
     }
 
-    let transcriptItems;
+    // Fetch transcript via YouTube InnerTube API
+    let captionUrl;
     try {
-      transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+      const playerResp = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)',
+        },
+        body: JSON.stringify({
+          context: { client: { clientName: 'ANDROID', clientVersion: '20.10.38' } },
+          videoId,
+        }),
+      });
+      const playerData = await playerResp.json();
+      const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+      if (tracks.length === 0) {
+        return res.status(422).json({ error: 'No captions found for this video. Make sure auto-captions are enabled, or upload an audio file instead.' });
+      }
+      // Prefer English, fall back to first available
+      const track = tracks.find((t) => t.languageCode?.startsWith('en')) ?? tracks[0];
+      captionUrl = track.baseUrl;
     } catch (err) {
-      console.error('Transcript fetch failed for', videoId, err?.message);
-      return res.status(422).json({ error: 'No captions found for this video. Make sure auto-captions are enabled, or upload an audio file instead.' });
+      console.error('YouTube player API failed for', videoId, err?.message);
+      return res.status(422).json({ error: 'Could not reach YouTube. Try again in a moment.' });
     }
 
-    if (!transcriptItems || transcriptItems.length === 0) {
+    // Fetch the caption XML and parse it
+    let rawTranscript;
+    try {
+      const capResp = await fetch(captionUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      const xml = await capResp.text();
+      // Parse <text> or <p> tags
+      const textMatches = [...xml.matchAll(/<(?:text|p)[^>]*>([^<]*)<\/(?:text|p)>/g)];
+      rawTranscript = textMatches
+        .map((m) => m[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim())
+        .filter(Boolean)
+        .join(' ');
+    } catch (err) {
+      console.error('Caption fetch failed for', videoId, err?.message);
+      return res.status(422).json({ error: 'Could not load captions. Try a different video.' });
+    }
+
+    if (!rawTranscript) {
       return res.status(422).json({ error: 'Transcript was empty. Try a different video.' });
     }
 
-    const rawTranscript = transcriptItems.map((t) => t.text).join(' ');
     // Truncate to ~12k chars to keep Claude costs low (~$0.02-0.05 per call)
     transcript = rawTranscript.slice(0, 12000);
   }
