@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { YoutubeTranscript } from 'youtube-transcript';
+import ytModule from 'youtube-transcript';
+const YoutubeTranscript = ytModule.YoutubeTranscript ?? ytModule.default?.YoutubeTranscript ?? ytModule;
 
 export const config = { maxDuration: 60 };
 
