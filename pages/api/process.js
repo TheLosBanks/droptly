@@ -50,31 +50,56 @@ async function processRequest(req, res) {
       });
     }
 
-    // Fetch transcript via YouTube InnerTube API
+    // Fetch transcript via YouTube InnerTube API — try multiple clients for reliability
+    const INNERTUBE_CLIENTS = [
+      {
+        clientName: 'TVHTML5_SIMPLY_EMBEDDED_PLAYER',
+        clientVersion: '2.0',
+        userAgent: 'Mozilla/5.0 (SMART-TV; LINUX; Tizen 6.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/6.0 TV Safari/538.1',
+        hl: 'en',
+      },
+      {
+        clientName: 'IOS',
+        clientVersion: '19.09.3',
+        userAgent: 'com.google.ios.youtube/19.09.3 (iPhone16,2; U; CPU iPhone OS 17_1_2 like Mac OS X)',
+        deviceModel: 'iPhone16,2',
+      },
+      {
+        clientName: 'ANDROID',
+        clientVersion: '19.09.37',
+        userAgent: 'com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip',
+        androidSdkVersion: 30,
+      },
+    ];
+
     let captionUrl;
-    try {
-      const playerResp = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'com.google.android.youtube/20.10.38 (Linux; U; Android 14)',
-        },
-        body: JSON.stringify({
-          context: { client: { clientName: 'ANDROID', clientVersion: '20.10.38' } },
-          videoId,
-        }),
-      });
-      const playerData = await playerResp.json();
-      const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
-      if (tracks.length === 0) {
-        return res.status(422).json({ error: 'No captions found for this video. Make sure auto-captions are enabled, or upload an audio file instead.' });
+    let lastErr;
+    for (const client of INNERTUBE_CLIENTS) {
+      try {
+        const ctx = { clientName: client.clientName, clientVersion: client.clientVersion, hl: client.hl || 'en' };
+        if (client.deviceModel) ctx.deviceModel = client.deviceModel;
+        if (client.androidSdkVersion) ctx.androidSdkVersion = client.androidSdkVersion;
+
+        const playerResp = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'User-Agent': client.userAgent },
+          body: JSON.stringify({ context: { client: ctx }, videoId }),
+        });
+        const playerData = await playerResp.json();
+        const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+        if (tracks.length > 0) {
+          const track = tracks.find((t) => t.languageCode?.startsWith('en')) ?? tracks[0];
+          captionUrl = track.baseUrl;
+          break;
+        }
+      } catch (err) {
+        lastErr = err;
       }
-      // Prefer English, fall back to first available
-      const track = tracks.find((t) => t.languageCode?.startsWith('en')) ?? tracks[0];
-      captionUrl = track.baseUrl;
-    } catch (err) {
-      console.error('YouTube player API failed for', videoId, err?.message);
-      return res.status(422).json({ error: 'Could not reach YouTube. Try again in a moment.' });
+    }
+
+    if (!captionUrl) {
+      console.error('All InnerTube clients returned no captions for', videoId, lastErr?.message);
+      return res.status(422).json({ error: 'No captions found for this video. Make sure auto-captions are enabled, or upload an audio file instead.' });
     }
 
     // Fetch the caption XML and parse it
