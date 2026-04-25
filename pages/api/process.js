@@ -34,7 +34,7 @@ async function processRequest(req, res) {
 
   // Accept pre-extracted transcript (e.g. from file upload flow)
   if (preExtractedTranscript && typeof preExtractedTranscript === 'string' && preExtractedTranscript.trim().length > 0) {
-    transcript = preExtractedTranscript.slice(0, 12000);
+    transcript = preExtractedTranscript.slice(0, 8000);
   } else {
     if (!url) return res.status(400).json({ error: 'URL or transcript required' });
 
@@ -87,7 +87,7 @@ async function processRequest(req, res) {
     }
 
     // Truncate to ~12k chars to keep Claude costs low (~$0.02-0.05 per call)
-    transcript = rawTranscript.slice(0, 12000);
+    transcript = rawTranscript.slice(0, 8000);
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
